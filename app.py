@@ -6,10 +6,13 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
 app = Flask(__name__)
+
 # Connect to db
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+
 # Secret key
 app.config['SECRET_KEY'] = "my super secret key that no one is supposed to know"
+
 # Initialize The Database
 db = SQLAlchemy(app)
 
@@ -19,11 +22,11 @@ class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)
-    date_added = db.Column(db.DateTime, default=datetime.utcnow)
+    date_added = db.Column(db.DateTime, default=datetime.now())
 
     # Create A String
     def repr(self):
-        return '<Name %r>' % self.name
+        return f'Name {self.name}'
 
 
 # Create a Form Class
@@ -88,16 +91,23 @@ def add_user():
     name = None
     form = UserForm()
     if form.validate_on_submit():
-        user = Users.query.filter_by(email=form.email.data).first()
-        if user is None:
-            user = Users(name=form.name.data, email=form.email.data)
-            db.session.add(user)
+
+        # Find user by email
+        user_item = Users.query.filter_by(email=form.email.data).first()
+        if user_item is None:
+
+            # Create a new user
+            user_item = Users(name=form.name.data, email=form.email.data)
+            db.session.add(user_item)
             db.session.commit()
         name = form.name.data
         form.name.data = ''
         form.email.data = ''
         flash("User Added Successfully!")
+
+    # Users list from DB
     our_users = Users.query.order_by(Users.date_added)
+
     return render_template("add_user.html",
                            form=form,
                            name=name,
@@ -105,6 +115,8 @@ def add_user():
 
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(
         debug=True,
         use_reloader=False,
