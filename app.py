@@ -131,18 +131,60 @@ def update(user_id):
         try:
             db.session.commit()
             flash("User Updated Successfully!")
-            return render_template("update.html",
-                                   form=form,
-                                   name_to_update=name_to_update)
+            return render_template(
+                "update.html",
+                form=form,
+                name_to_update=name_to_update,
+            )
         except Exception:
             flash("Error!  Looks like there was a problem...try again!")
-            return render_template("update.html",
-                                   form=form,
-                                   name_to_update=name_to_update)
+            return render_template(
+                "update.html",
+                form=form,
+                name_to_update=name_to_update,
+            )
     else:
-        return render_template("update.html",
-                               form=form,
-                               name_to_update=name_to_update)
+        return render_template(
+            "update.html",
+            form=form,
+            name_to_update=name_to_update,
+            user_id=user_id,
+        )
+
+
+@app.route('/delete/<int:user_id>')
+def delete(user_id):
+    """User deletion"""
+
+    name = None
+    form = UserForm()
+
+    # Users object
+    user_item = Users.query.get_or_404(user_id)
+
+    # Users list
+    our_users = Users.query.order_by(Users.date_added)
+
+    try:
+        db.session.delete(user_item)
+        db.session.commit()
+        flash("User Deleted Successfully!!")
+
+        return render_template(
+            "add_user.html",
+            form=form,
+            name=name,
+            our_users=our_users,
+        )
+
+    except Exception:
+        flash("Whoops! There was a problem deleting user, try again...")
+        return render_template(
+            "add_user.html",
+            form=form,
+            name=name,
+            our_users=our_users
+        )
 
 
 if __name__ == '__main__':
