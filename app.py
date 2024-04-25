@@ -64,6 +64,12 @@ class NamerForm(FlaskForm):
     submit = SubmitField("Submit")
 
 
+class PasswordForm(FlaskForm):
+    email = StringField("What's Your Email", validators=[DataRequired()])
+    password_hash = PasswordField("What's Your Password", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+
 @app.route("/user/<user_name>")
 def user(user_name):
     return render_template(
@@ -117,7 +123,6 @@ def add_user():
         # Find user by email
         user_item = Users.query.filter_by(email=form.email.data).first()
         if user_item is None:
-
             # Hash the password!!!
             hashed_password = generate_password_hash(form.password_hash.data)
             # Create a new user
@@ -129,11 +134,15 @@ def add_user():
             )
             db.session.add(user_item)
             db.session.commit()
+
         name = form.name.data
+
+        # Clear form fields
         form.name.data = ''
         form.email.data = ''
         form.favorite_color.data = ''
         form.password_hash.data = ''
+
         flash("User Added Successfully!")
 
     # Users list from DB
@@ -209,8 +218,41 @@ def delete(user_id):
             "add_user.html",
             form=form,
             name=name,
-            our_users=our_users
+            our_users=our_users,
         )
+
+
+@app.route('/test_password', methods=['GET', 'POST'])
+def test_password():
+    email = None
+    password = None
+    user_item = None
+    passed = None
+    form = PasswordForm()
+
+    # Validate Form
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password_hash.data
+        # Clear the form
+        form.email.data = ''
+        form.password_hash.data = ''
+
+        # Lookup User By Email Address
+        user_item = Users.query.filter_by(email=email).first()
+
+        # Check Hashed Password
+        if user_item:
+            passed = check_password_hash(user_item.password_hash, password)
+
+    return render_template(
+        template_name_or_list="test_password.html",
+        email=email,
+        password=password,
+        user_item=user_item,
+        passed=passed,
+        form=form,
+    )
 
 
 if __name__ == '__main__':
